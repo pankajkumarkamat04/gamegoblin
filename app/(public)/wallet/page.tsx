@@ -278,19 +278,19 @@ function WalletPageContent() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-goblin-bg-card border border-goblin-border">
+          <TabsList className="grid w-full grid-cols-2 gap-3 p-3 bg-goblin-bg-card border border-goblin-border rounded-lg h-auto min-h-12">
             <TabsTrigger
               value="controller"
-              className="data-[state=active]:bg-goblin-green data-[state=active]:text-black"
+              className="data-[state=active]:bg-goblin-green data-[state=active]:text-black px-5 py-3.5 rounded-md text-sm font-medium"
             >
-              <Wallet className="h-4 w-4 mr-2" />
+              <Wallet className="h-4 w-4 mr-2 shrink-0" />
               Wallet Controller
             </TabsTrigger>
             <TabsTrigger
               value="transaction"
-              className="data-[state=active]:bg-goblin-green data-[state=active]:text-black"
+              className="data-[state=active]:bg-goblin-green data-[state=active]:text-black px-5 py-3.5 rounded-md text-sm font-medium"
             >
-              <History className="h-4 w-4 mr-2" />
+              <History className="h-4 w-4 mr-2 shrink-0" />
               Wallet Transaction
             </TabsTrigger>
           </TabsList>

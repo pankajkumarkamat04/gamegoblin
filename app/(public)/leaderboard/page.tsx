@@ -14,12 +14,13 @@ import {
 } from "lucide-react";
 import { getLeaderboard, getUserStats, maskPhoneNumber, formatCurrency } from "@/lib/api/leaderboard";
 import { useUserAuth } from "@/contexts/UserAuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
 type Period = 'all-time' | 'month' | 'week';
 
-export default function LeaderboardPage() {
+function LeaderboardPageContent() {
   const { user, isAuthenticated } = useUserAuth();
   const [period, setPeriod] = useState<Period>('all-time');
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -256,5 +257,13 @@ export default function LeaderboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LeaderboardPage() {
+  return (
+    <ProtectedRoute>
+      <LeaderboardPageContent />
+    </ProtectedRoute>
   );
 }

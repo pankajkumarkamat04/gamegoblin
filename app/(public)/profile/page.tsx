@@ -55,14 +55,14 @@ function ProfilePageContent() {
     return token;
   }, []);
 
-  const loadProfileData = useCallback(async () => {
+  const loadProfileData = useCallback(async (showLoading = true) => {
     if (!isAuthenticated) {
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       setError(null);
       const res = await fetchProfile();
       if (res.ok && res.user) {
@@ -77,7 +77,7 @@ function ProfilePageContent() {
         e instanceof Error ? e.message : "Failed to load profile";
       setError(errorMessage);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [isAuthenticated, fetchProfile]);
 
@@ -148,7 +148,7 @@ function ProfilePageContent() {
         setEmail(updatedUser.email ?? email);
       }
       setError(null);
-      await loadProfileData();
+      await loadProfileData(false);
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error
@@ -209,7 +209,7 @@ function ProfilePageContent() {
       if (!res.ok) {
         setError(data?.message || "Failed to upload avatar");
       } else {
-        await loadProfileData();
+        await loadProfileData(false);
         setAvatarFile(null);
         setAvatarPreview(null);
       }
@@ -436,12 +436,12 @@ function ProfilePageContent() {
 
             {/* Quick Links */}
             <div className="pt-4 border-t border-goblin-border/60 mt-4 space-y-2">
-              <Link href="/orders">
-                <Button className="w-full bg-goblin-green hover:bg-goblin-green/90 text-black font-semibold text-sm flex items-center justify-center gap-2">
+              <Button asChild className="w-full bg-goblin-green hover:bg-goblin-green/90 text-black font-semibold text-sm flex items-center justify-center gap-2">
+                <Link href="/orders">
                   View Orders
                   <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
               <div className="pt-3">
                 <Button
                   onClick={() => {

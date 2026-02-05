@@ -27,13 +27,14 @@ export function HeroSection() {
 
         if (bannersData.success && Array.isArray(bannersData.data)) {
           const slides = bannersData.data
-            .sort((a: any, b: any) => a.priority - b.priority)
+            .filter((banner: any) => (banner.type || "").toLowerCase() === "primary banner")
+            .sort((a: any, b: any) => (a.priority ?? 0) - (b.priority ?? 0))
             .map((banner: any) => ({
               id: banner._id,
               image: banner.image,
               href: banner.url || '/games',
               title: banner.title,
-              external: banner.url.startsWith('http')
+              external: banner.url && String(banner.url).startsWith('http')
             }));
           setBannerSlides(slides);
         }
