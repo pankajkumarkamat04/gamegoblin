@@ -17,17 +17,27 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  getGames,
-  getGamePackages,
-  verifyMLBBPlayer,
-  createOrder,
-  getOrder,
-  type Game,
-  type GamePackage,
-  type Order,
-} from '@/lib/api';
+// Note: This is an example file. Update imports to match actual API structure.
+// import {
+//   getGames,
+//   getGamePackages,
+//   verifyMLBBPlayer,
+//   createOrder,
+//   getOrder,
+//   type Game,
+//   type GamePackage,
+//   type Order,
+// } from '@/lib/api';
+import { getGamePackages, createOrder } from '@/lib/packages-api';
+import { type Game } from '@/lib/games-data';
+import { type Package as GamePackage } from '@/lib/packages-api';
 import { getPlayerRequirements, validatePlayerDetails } from '@/lib/player-details';
+
+// Stub types for example
+type Order = any;
+const getGames = async () => [] as Game[];
+const verifyMLBBPlayer = async (_playerId: string, _zoneId: string) => ({ success: false, message: 'Not implemented', data: null as { username?: string } | null });
+const getOrder = async (_orderId: string) => null as Order | null;
 
 export default function ExampleOrderFlow() {
   const [step, setStep] = useState<'select-game' | 'select-package' | 'player-details' | 'payment' | 'complete'>('select-game');
@@ -86,8 +96,8 @@ export default function ExampleOrderFlow() {
     setLoading(true);
     setError('');
     try {
-      const packagesList = await getGamePackages(game.slug);
-      setPackages(packagesList);
+      const packagesList = await getGamePackages(game._id || game.slug);
+      setPackages(packagesList.diamondPacks);
       setStep('select-package');
     } catch (err: any) {
       setError(err.message);
@@ -146,7 +156,7 @@ export default function ExampleOrderFlow() {
     try {
       const result = await createOrder({
         gameSlug: selectedGame.slug,
-        packageId: selectedPackage.id,
+        packageId: selectedPackage._id || selectedPackage.productId || '',
         playerDetails: {
           playerId: playerDetails.playerId,
           zoneId: playerDetails.zoneId || undefined,

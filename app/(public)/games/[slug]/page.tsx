@@ -578,7 +578,7 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
         if (pkgData.games.includes(gameData.slug) && isTimeLimitedPackageActive(packageId)) {
           // Check if package not already in the list
           const exists = filteredPackages.some((p: Package) => p.productId === packageId);
-          if (!exists) {
+          if (!exists && gameData._id) {
             timeLimitedPackagesToAdd.push({
               _id: pkgData.id,
               game: gameData._id,
@@ -734,7 +734,8 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
     // If wallet is selected, make sure user has enough balance
     if (paymentMethod === "wallet") {
       const walletBalance = (user as any)?.walletBalance ?? 0;
-      if (walletBalance < selectedPackage.price) {
+      const packagePrice = selectedPackage.price ?? selectedPackage.amount;
+      if (walletBalance < packagePrice) {
         toast.error("Insufficient wallet balance for this order");
         return;
       }
@@ -949,8 +950,10 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
       if (aIsTimeLimited && !bIsTimeLimited) return -1;
       if (!aIsTimeLimited && bIsTimeLimited) return 1;
 
-      // Otherwise sort by price
-      return a.price - b.price;
+      // Otherwise sort by price (use amount as fallback)
+      const aPrice = a.price ?? a.amount;
+      const bPrice = b.price ?? b.amount;
+      return aPrice - bPrice;
     });
   });
 
@@ -964,8 +967,10 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
       if (aIsTimeLimited && !bIsTimeLimited) return -1;
       if (!aIsTimeLimited && bIsTimeLimited) return 1;
 
-      // Otherwise sort by price
-      return a.price - b.price;
+      // Otherwise sort by price (use amount as fallback)
+      const aPrice = a.price ?? a.amount;
+      const bPrice = b.price ?? b.amount;
+      return aPrice - bPrice;
     })
     : categorizedPackages[selectedCategory] || [];
 
@@ -1106,8 +1111,8 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {displayPackages.map((pkg, index) => {
                     // Use a composite key since productId might be undefined
-                    const pkgKey = pkg.productId || `${pkg.name}-${pkg.price}`;
-                    const selectedKey = selectedPackage?.productId || (selectedPackage ? `${selectedPackage.name}-${selectedPackage.price}` : null);
+                    const pkgKey = pkg.productId || `${pkg.name}-${pkg.price ?? pkg.amount}`;
+                    const selectedKey = selectedPackage?.productId || (selectedPackage ? `${selectedPackage.name}-${selectedPackage.price ?? selectedPackage.amount}` : null);
                     const isSelected = selectedKey !== null && pkgKey === selectedKey;
                     const currencyImg = getCurrencyImage(game?.slug || '', pkg);
                     const isTimeLimited = pkg.productId && Object.keys(TIME_LIMITED_PACKAGES).includes(pkg.productId);
@@ -1144,11 +1149,11 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
                           {/* Currency Image */}
                           {currencyImg && (
                             <div className="flex justify-center py-2">
-                              <div className={`relative w-12 h-12 transition-transform group-hover:scale-110 ${pkg.name.toLowerCase().includes('all pack') || isTimeLimited ? 'scale-125' : ''
+                              <div className={`relative w-12 h-12 transition-transform group-hover:scale-110 ${pkg.name?.toLowerCase().includes('all pack') || isTimeLimited ? 'scale-125' : ''
                                 }`}>
                                 <Image
                                   src={currencyImg}
-                                  alt={pkg.name}
+                                  alt={pkg.name || 'Package'}
                                   fill
                                   className="object-contain drop-shadow-md"
                                 />
@@ -1172,7 +1177,7 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
                           <div className="mt-auto pt-2 border-t border-goblin-border/50">
                             <div className="text-center">
                               <div className={`text-xl font-bold ${isTimeLimited ? 'text-amber-400' : 'text-goblin-green'}`}>
-                                ₹{pkg.price.toLocaleString('en-IN')}
+                                ₹{(pkg.price ?? pkg.amount).toLocaleString('en-IN')}
                               </div>
                               <div className="text-[10px] text-goblin-muted/80 mt-0.5">
                                 {isTimeLimited ? 'Limited' : 'Instant'}
@@ -1536,7 +1541,7 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
                       <div className="flex items-center justify-between">
                         <span className="text-goblin-muted text-xs font-semibold">Total Amount</span>
                         <span className="text-xl font-bold text-goblin-green">
-                          ₹{selectedPackage.price.toLocaleString('en-IN')}
+                          ₹{(selectedPackage.price ?? selectedPackage.amount).toLocaleString('en-IN')}
                         </span>
                       </div>
                     </div>
@@ -1583,7 +1588,7 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
             <div className="flex-1 min-w-0">
               <p className="text-xs text-goblin-muted truncate">Selected</p>
               <p className="text-sm font-bold text-goblin-fg truncate">{selectedPackage.name}</p>
-              <p className="text-base font-bold text-goblin-green">₹{selectedPackage.price.toLocaleString('en-IN')}</p>
+              <p className="text-base font-bold text-goblin-green">₹{(selectedPackage.price ?? selectedPackage.amount).toLocaleString('en-IN')}</p>
             </div>
             <div className="flex flex-col gap-2">
               <Button
