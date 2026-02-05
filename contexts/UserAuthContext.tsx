@@ -16,6 +16,8 @@ export interface UserAuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAuthReady: boolean;
+  /** True when we have a token but user not yet loaded (e.g. on refresh). Protected routes should show loading. */
+  isRestoringSession: boolean;
   login: (user: User, token?: string) => void;
   logout: () => void;
   openAuthModal: () => void;
@@ -285,12 +287,15 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
   const openAuthModal = () => setIsAuthModalOpen(true);
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
+  const isRestoringSession = isAuthReady && !!token && !user;
+
   return (
     <UserAuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
         isAuthReady,
+        isRestoringSession,
         login,
         logout,
         openAuthModal,

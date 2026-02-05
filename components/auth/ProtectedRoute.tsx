@@ -15,16 +15,17 @@ interface ProtectedRouteProps {
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const { isAuthenticated, isAuthReady } = useUserAuth();
+  const { isAuthenticated, isAuthReady, isRestoringSession } = useUserAuth();
 
   useEffect(() => {
-    if (!isAuthReady) return;
+    if (!isAuthReady || isRestoringSession) return;
     if (!isAuthenticated) {
       router.replace("/login");
     }
-  }, [isAuthReady, isAuthenticated, router]);
+  }, [isAuthReady, isAuthenticated, isRestoringSession, router]);
 
-  if (!isAuthReady) {
+  // Show loading until auth is ready and we're not still restoring session (e.g. after refresh)
+  if (!isAuthReady || isRestoringSession) {
     return (
       <div className="min-h-screen bg-goblin-bg flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-goblin-green animate-spin" />
