@@ -3,14 +3,22 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Menu, User, LogIn, LogOut, Sparkles } from "lucide-react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 
 export function GoblinHeader() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const { user, isAuthenticated, logout, openAuthModal, closeAuthModal, isAuthModalOpen } = useUserAuth();
+  const { user, isAuthenticated, logout } = useUserAuth();
+
+  const handleSidebarLogout = () => {
+    logout();
+    setIsOpen(false);
+    router.push("/");
+  };
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -88,7 +96,7 @@ export function GoblinHeader() {
                     <User className="h-4 w-4 text-black" />
                   </div>
                   <span className="text-sm font-semibold text-goblin-fg">
-                    {user?.name || `+91 ${user?.phone.slice(-4)}`}
+                    {user?.name || (user?.phone ? `+91 ${user.phone.slice(-4)}` : "User")}
                   </span>
                 </div>
                 <Button
@@ -165,13 +173,13 @@ export function GoblinHeader() {
                 className="w-[320px] bg-gradient-to-br from-goblin-bg via-goblin-bg-alt to-goblin-bg border-l border-goblin-border/30 p-0 backdrop-blur-xl"
               >
                 <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
-                <div className="flex flex-col h-full relative overflow-hidden">
+                <div className="flex flex-col h-full max-h-[100dvh] relative overflow-hidden">
                   {/* Decorative gradient orbs */}
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-goblin-green/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-goblin-purple/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-goblin-green/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-goblin-purple/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-                  {/* Mobile Header */}
-                  <div className="relative flex items-center justify-between p-6 border-b border-goblin-border/30 backdrop-blur-sm">
+                  {/* Mobile Header - fixed at top */}
+                  <div className="relative flex-shrink-0 flex items-center justify-between p-6 border-b border-goblin-border/30 backdrop-blur-sm">
                     <Link href="/" className="flex items-center" onClick={() => setIsOpen(false)}>
                       <div className="relative h-12 w-44 flex-shrink-0">
                         <Image
@@ -184,8 +192,8 @@ export function GoblinHeader() {
                     </Link>
                   </div>
 
-                  {/* Mobile Navigation - Modern Cards */}
-                  <nav className="relative flex flex-col gap-2 p-4 flex-1">
+                  {/* Mobile Navigation - scrollable */}
+                  <nav className="relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col gap-2 p-4">
                     {navigation.map((item, index) => (
                       <Link
                         key={item.name}
@@ -203,15 +211,15 @@ export function GoblinHeader() {
                     ))}
                   </nav>
 
-                  {/* Mobile Actions - Premium Style */}
-                  <div className="relative border-t border-goblin-border/30 p-6 space-y-4 bg-gradient-to-t from-goblin-bg-card/30 to-transparent backdrop-blur-sm">
+                  {/* Mobile Actions - fixed at bottom */}
+                  <div className="relative flex-shrink-0 border-t border-goblin-border/30 p-6 space-y-4 bg-gradient-to-t from-goblin-bg-card/30 to-transparent backdrop-blur-sm">
                     {isAuthenticated ? (
                       <>
                         <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-goblin-bg-card/70 to-goblin-bg-card/50 backdrop-blur-sm border border-goblin-border/30 rounded-2xl">
                           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-goblin-green to-emerald-500 flex items-center justify-center shadow-lg shadow-goblin-green/20">
                             <User className="h-6 w-6 text-black" />
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <p className="text-xs text-goblin-fg/60 font-medium">
                               Logged in as{" "}
                               <span className="font-semibold text-goblin-fg">
@@ -224,7 +232,7 @@ export function GoblinHeader() {
                           </div>
                         </div>
                         <Button
-                          onClick={logout}
+                          onClick={handleSidebarLogout}
                           variant="outline"
                           className="w-full h-12 text-sm font-semibold border-goblin-border/50 hover:border-red-400/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-300"
                         >

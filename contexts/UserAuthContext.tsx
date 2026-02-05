@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { buildAPIURL, getAPIHeaders } from "@/lib/utils";
+import { buildAPIURL, buildProfileAPIURL, getAPIHeaders } from "@/lib/utils";
 import Cookies from "js-cookie";
 import {
   initializeAuth,
@@ -186,7 +186,7 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Onetopup profile endpoint
-      const url = buildAPIURL("/api/v1/user/me");
+      const url = buildProfileAPIURL("/api/v1/user/me");
       const res = await fetch(url, {
         method: "GET",
         headers: { ...getAPIHeaders(false), Authorization: `Bearer ${token}` },

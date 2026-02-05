@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,15 @@ type AuthStep = 'phone' | 'otp' | 'register' | 'success';
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login } = useUserAuth();
+    const { login, isAuthenticated, isAuthReady } = useUserAuth();
+
+    // If already logged in, redirect to profile
+    useEffect(() => {
+        if (!isAuthReady) return;
+        if (isAuthenticated) {
+            router.replace("/profile");
+        }
+    }, [isAuthReady, isAuthenticated, router]);
 
     const [step, setStep] = useState<AuthStep>('phone');
     const [phone, setPhone] = useState("");
@@ -185,6 +193,16 @@ export default function LoginPage() {
             clearLoadingTimeout();
         }
     };
+
+    // Already logged in: show brief state while redirecting
+    if (isAuthReady && isAuthenticated) {
+        return (
+            <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-4 bg-goblin-bg">
+                <Loader2 className="h-8 w-8 text-goblin-green animate-spin" />
+                <p className="mt-3 text-sm text-goblin-muted">Redirecting to profile...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-4 relative overflow-hidden bg-goblin-bg">

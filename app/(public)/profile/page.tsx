@@ -25,7 +25,7 @@ import {
   LogOut,
   RefreshCw,
 } from "lucide-react";
-import { buildAPIURL, getAPIHeaders } from "@/lib/utils";
+import { buildProfileAPIURL } from "@/lib/utils";
 
 function ProfilePageContent() {
   const { isAuthenticated, isAuthReady, fetchProfile, logout } =
@@ -101,25 +101,49 @@ function ProfilePageContent() {
     setError(null);
 
     try {
-      const url = buildAPIURL("/api/v1/user/profile");
+      // Same as Zoro: PUT /user/profile with { name, email } (use profile API base if set, e.g. Zoro/credszone)
+      const url = buildProfileAPIURL("/api/v1/user/profile");
+      const requestBody: { name: string; email?: string } = {
+        name: name.trim(),
+      };
+      if (email.trim()) {
+        requestBody.email = email.trim();
+      }
+
       const res = await fetch(url, {
         method: "PUT",
         headers: {
-          ...getAPIHeaders(false),
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim() || undefined,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data?.message || "Failed to update profile");
-      } else {
-        await loadProfileData();
+      let data: { message?: string; error?: string; user?: UserType; data?: { user?: UserType } } = {};
+      const resContentType = res.headers.get("content-type");
+      if (resContentType && resContentType.includes("application/json")) {
+        try {
+          data = await res.json();
+        } catch {
+          // ignore JSON parse error
+        }
       }
+
+      if (!res.ok) {
+        const msg = data?.message || data?.error || `Request failed (${res.status})`;
+        setError(msg);
+        return;
+      }
+
+      // Update local state from response if backend returns user (Zoro-style)
+      const updatedUser = data?.user ?? data?.data?.user;
+      if (updatedUser && typeof updatedUser === "object" && "phone" in updatedUser) {
+        setProfile(updatedUser as UserType);
+        setName(updatedUser.name ?? name);
+        setEmail(updatedUser.email ?? email);
+      }
+      setError(null);
+      await loadProfileData();
     } catch (e: unknown) {
       const errorMessage =
         e instanceof Error
@@ -156,7 +180,7 @@ function ProfilePageContent() {
     setError(null);
 
     try {
-      const url = buildAPIURL("/api/v1/user/profile-picture");
+      const url = buildProfileAPIURL("/api/v1/user/profile-picture");
       const formData = new FormData();
       formData.append("image", avatarFile);
 
@@ -168,7 +192,15 @@ function ProfilePageContent() {
         body: formData,
       });
 
-      const data = await res.json();
+      let data: { message?: string } = {};
+      const resContentType = res.headers.get("content-type");
+      if (resContentType && resContentType.includes("application/json")) {
+        try {
+          data = await res.json();
+        } catch {
+          // ignore JSON parse error
+        }
+      }
       if (!res.ok) {
         setError(data?.message || "Failed to upload avatar");
       } else {

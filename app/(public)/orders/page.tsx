@@ -162,6 +162,9 @@ function OrdersPageContent() {
   const [gamesMap, setGamesMap] = useState<Record<string, { name: string; icon: string; slug: string }>>({});
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [checkingPayment, setCheckingPayment] = useState<Record<string, boolean>>({});
+  const [displayCount, setDisplayCount] = useState(10);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 10;
 
   // Fetch games data for icons
   useEffect(() => {
@@ -301,6 +304,22 @@ function OrdersPageContent() {
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination: show first displayCount items, load more adds PAGE_SIZE
+  const ordersToShow = filteredOrders.slice(0, displayCount);
+  const hasMore = filteredOrders.length > displayCount;
+  const loadMore = () => {
+    setLoadingMore(true);
+    setTimeout(() => {
+      setDisplayCount((prev) => prev + PAGE_SIZE);
+      setLoadingMore(false);
+    }, 300);
+  };
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setDisplayCount(PAGE_SIZE);
+  }, [searchQuery, statusFilter]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-IN", { 
@@ -496,7 +515,7 @@ Generated: ${new Date().toLocaleString('en-IN')}
           </div>
         ) : filteredOrders.length > 0 ? (
           <div className="space-y-4">
-            {filteredOrders.map((order: Order) => {
+            {ordersToShow.map((order: Order) => {
               const statusConfig = getStatusConfig(order.status);
               const StatusIcon = statusConfig.icon;
               
@@ -745,6 +764,32 @@ Generated: ${new Date().toLocaleString('en-IN')}
                 </div>
               );
             })}
+
+            {/* Load More */}
+            {hasMore && (
+              <div className="flex justify-center pt-6">
+                <Button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  variant="outline"
+                  className="border-[#4ecdc4] text-[#4ecdc4] hover:bg-[#4ecdc4]/10 px-8"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Load more"
+                  )}
+                </Button>
+              </div>
+            )}
+            {filteredOrders.length > 0 && (
+              <p className="text-center text-sm text-goblin-fg/50 pt-2">
+                Showing {ordersToShow.length} of {filteredOrders.length} orders
+              </p>
+            )}
           </div>
         ) : (
           <div className="text-center py-20 border border-goblin-border/30 rounded-lg bg-goblin-bg-card">
