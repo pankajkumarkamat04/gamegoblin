@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { Menu, User, LogOut, X, Sparkles } from "lucide-react";
+import { Menu, User, LogIn, LogOut, Sparkles } from "lucide-react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 
 export function GoblinHeader() {
@@ -68,7 +68,7 @@ export function GoblinHeader() {
             {isAuthenticated ? (
               <>
                 {/* Profile Button */}
-                <Link href="/profile">
+                <Link href="/profile" title="Profile">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -129,7 +129,7 @@ export function GoblinHeader() {
           {/* Mobile Menu - Enhanced */}
           <div className="md:hidden flex items-center gap-2">
             {isAuthenticated ? (
-              <Link href="/profile">
+              <Link href="/profile" title="Profile">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -139,13 +139,13 @@ export function GoblinHeader() {
                 </Button>
               </Link>
             ) : (
-              <Link href="/login">
+              <Link href="/login" title="Login">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-10 w-10 text-goblin-fg/70 hover:text-goblin-fg hover:bg-goblin-bg-card/70 rounded-xl transition-all"
                 >
-                  <User className="h-5 w-5" />
+                  <LogIn className="h-5 w-5" />
                 </Button>
               </Link>
             )}
@@ -234,7 +234,11 @@ export function GoblinHeader() {
                       </>
                     ) : (
                       <>
-                        <Link href="/login" className="w-full block">
+                        <Link
+                          href="/login"
+                          className="w-full block"
+                          onClick={() => setIsOpen(false)}
+                        >
                           <Button
                             className="w-full h-12 bg-gradient-to-r from-goblin-green via-emerald-500 to-goblin-green bg-size-200 hover:bg-pos-100 text-white text-sm font-bold rounded-xl shadow-xl shadow-goblin-green/30 hover:shadow-goblin-green/50 transition-all duration-500 hover:scale-[1.02] relative overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-goblin-green/50"
                           >

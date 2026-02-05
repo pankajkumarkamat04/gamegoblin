@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { buildAPIURL, getAPIHeaders } from "@/lib/utils";
 import Cookies from "js-cookie";
 import {
@@ -32,14 +32,36 @@ const UserAuthContext = createContext<UserAuthContextType | undefined>(undefined
 export function UserAuthProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const token = useAppSelector((state) => state.auth.token);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const restoreAttempted = useRef(false);
 
   useEffect(() => {
     // Initialize Redux auth from token storage only
     dispatch(initializeAuth());
     setIsAuthReady(true);
   }, [dispatch]);
+
+  // On refresh: we have token in storage but Redux user is empty. Restore user by fetching profile.
+  useEffect(() => {
+    if (typeof window === "undefined" || !isAuthReady || user !== null) return;
+    const storedToken =
+      token ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("user_token") ||
+      Cookies.get("user_token");
+    if (!storedToken || restoreAttempted.current) return;
+    restoreAttempted.current = true;
+    fetchProfile()
+      .then((res) => {
+        if (!res.ok && (res.error === "unauthorized" || res.error === "no_token")) {
+          dispatch(reduxLogout());
+          persistToken(null);
+        }
+      })
+      .catch(() => {});
+  }, [isAuthReady, user, token]);
 
   const login = (userData: User, token?: string) => {
     // Only save token, user data goes to Redux only

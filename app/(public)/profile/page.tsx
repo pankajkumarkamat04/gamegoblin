@@ -405,16 +405,18 @@ function ProfilePageContent() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button
-                onClick={() => {
-                  logout();
-                  window.location.href = "/";
-                }}
-                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold text-sm flex items-center justify-center gap-2 border border-red-500/40"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
+              <div className="pt-3">
+                <Button
+                  onClick={() => {
+                    logout();
+                    window.location.href = "/";
+                  }}
+                  className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold text-sm flex items-center justify-center gap-2 border border-red-500/40"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
             </div>
           </Card>
         </div>

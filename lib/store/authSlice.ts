@@ -98,11 +98,12 @@ const authSlice = createSlice({
     // Initialize auth from localStorage (Zoro-style)
     initializeAuth: (state) => {
       if (typeof window !== "undefined") {
-        const token = localStorage.getItem("authToken");
-
+        const token =
+          localStorage.getItem("authToken") ||
+          localStorage.getItem("user_token") ||
+          null;
         if (token) {
           state.token = token;
-          // Don't set isAuthenticated to true here - let profile check confirm
         }
         state.isLoading = false;
       }
