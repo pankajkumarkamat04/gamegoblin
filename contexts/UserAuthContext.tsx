@@ -333,7 +333,7 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useUserAuth() {
+export function useUserAuth(): UserAuthContextType {
   const context = useContext(UserAuthContext);
   if (context === undefined) {
     throw new Error("useUserAuth must be used within a UserAuthProvider");

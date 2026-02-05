@@ -5,11 +5,13 @@ import React, {
   useState,
   ChangeEvent,
   FormEvent,
+  useCallback,
 } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Cookies from "js-cookie";
-import { useUserAuth, type UserAuthContextType } from "@/contexts/UserAuthContext";
+import { useUserAuth } from "@/contexts/UserAuthContext";
+import { type User as UserType } from "@/lib/store/authSlice";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,48 +27,22 @@ import {
 import { buildAPIURL, getAPIHeaders } from "@/lib/utils";
 
 export default function ProfilePage() {
-  const auth: UserAuthContextType = useUserAuth();
-  const { isAuthenticated, isAuthReady, openAuthModal, fetchProfile } = auth;
+  const { isAuthenticated, isAuthReady, openAuthModal, fetchProfile } =
+    useUserAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<UserType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isAuthReady) return;
-
-    const loadProfile = async () => {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const res = await fetchProfile();
-        if (res.ok && res.user) {
-          setProfile(res.user);
-          setName(res.user.name || "");
-          setEmail(res.user.email || "");
-        } else if (res.error) {
-          setError(res.error);
-        }
-      } catch (e: any) {
-        setError(e?.message || "Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadProfile();
-  }, [isAuthenticated, fetchProfile, isAuthReady]);
-
-  const getToken = (): string | undefined => {
+  const getToken = useCallback((): string | undefined => {
+    if (typeof window === "undefined") return undefined;
     let token = Cookies.get("user_token");
-    if (!token && typeof window !== "undefined") {
+    if (!token) {
       try {
         token = window.localStorage.getItem("user_token") || undefined;
       } catch {
@@ -74,21 +50,55 @@ export default function ProfilePage() {
       }
     }
     return token;
-  };
+  }, []);
 
-  const handleSaveProfile = async (e: FormEvent) => {
+  const loadProfileData = useCallback(async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetchProfile();
+      if (res.ok && res.user) {
+        setProfile(res.user);
+        setName(res.user.name || "");
+        setEmail(res.user.email || "");
+      } else {
+        setError(res.error || "Failed to load profile");
+      }
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error ? e.message : "Failed to load profile";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, fetchProfile]);
+
+  useEffect(() => {
+    if (!isAuthReady) return;
+    loadProfileData();
+  }, [isAuthReady, loadProfileData]);
+
+  const handleSaveProfile = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) {
       setError("Name is required");
       return;
     }
+
     const token = getToken();
     if (!token) {
       setError("No authentication token found");
       return;
     }
+
     setSaving(true);
     setError(null);
+
     try {
       const url = buildAPIURL("/api/v1/user/profile");
       const res = await fetch(url, {
@@ -102,17 +112,19 @@ export default function ProfilePage() {
           email: email.trim() || undefined,
         }),
       });
+
       const data = await res.json();
       if (!res.ok) {
         setError(data?.message || "Failed to update profile");
       } else {
-        const refreshed = await fetchProfile();
-        if (refreshed.ok && refreshed.user) {
-          setProfile(refreshed.user);
-        }
+        await loadProfileData();
       }
-    } catch (e: any) {
-      setError(e?.message || "Something went wrong while saving profile");
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error
+          ? e.message
+          : "Something went wrong while saving profile";
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -121,6 +133,7 @@ export default function ProfilePage() {
   const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setAvatarFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -131,17 +144,21 @@ export default function ProfilePage() {
 
   const handleUploadAvatar = async () => {
     if (!avatarFile) return;
+
     const token = getToken();
     if (!token) {
       setError("No authentication token found");
       return;
     }
+
     setUploading(true);
     setError(null);
+
     try {
       const url = buildAPIURL("/api/v1/user/profile-picture");
       const formData = new FormData();
       formData.append("image", avatarFile);
+
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -149,24 +166,27 @@ export default function ProfilePage() {
         },
         body: formData,
       });
+
       const data = await res.json();
       if (!res.ok) {
         setError(data?.message || "Failed to upload avatar");
       } else {
-        const refreshed = await fetchProfile();
-        if (refreshed.ok && refreshed.user) {
-          setProfile(refreshed.user);
-        }
+        await loadProfileData();
         setAvatarFile(null);
         setAvatarPreview(null);
       }
-    } catch (e: any) {
-      setError(e?.message || "Something went wrong while uploading avatar");
+    } catch (e: unknown) {
+      const errorMessage =
+        e instanceof Error
+          ? e.message
+          : "Something went wrong while uploading avatar";
+      setError(errorMessage);
     } finally {
       setUploading(false);
     }
   };
 
+  // Loading state
   if (!isAuthReady || loading) {
     return (
       <div className="min-h-screen bg-goblin-bg flex items-center justify-center">
@@ -175,6 +195,7 @@ export default function ProfilePage() {
     );
   }
 
+  // Not authenticated
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-goblin-bg flex items-center justify-center px-4">
@@ -200,15 +221,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-goblin-bg flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-goblin-green animate-spin" />
-      </div>
-    );
-  }
-
-  // If we're not loading anymore but profile is missing, show a friendly error
+  // Profile not loaded
   if (!profile) {
     return (
       <div className="min-h-screen bg-goblin-bg flex items-center justify-center px-4">
@@ -217,9 +230,7 @@ export default function ProfilePage() {
             {error ? "Failed to load profile" : "Profile not available"}
           </h1>
           {error && (
-            <p className="text-sm text-goblin-muted mb-4">
-              {error}
-            </p>
+            <p className="text-sm text-goblin-muted mb-4">{error}</p>
           )}
           {!error && (
             <p className="text-sm text-goblin-muted mb-4">
@@ -231,8 +242,9 @@ export default function ProfilePage() {
     );
   }
 
+  // Main profile view
   const displayName = profile.name || "Player";
-  const walletBalance = (profile.walletBalance ?? 0) as number;
+  const walletBalance = profile.walletBalance ?? 0;
   const avatarUrl = avatarPreview || profile.profilePicture || null;
 
   return (
