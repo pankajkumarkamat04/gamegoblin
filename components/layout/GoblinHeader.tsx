@@ -65,18 +65,21 @@ export function GoblinHeader() {
 
           {/* Desktop Actions - Enhanced */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Profile Button */}
-            <Link href="/profile">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 text-goblin-fg/70 hover:text-goblin-fg hover:bg-goblin-bg-card/70 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-goblin-green/20"
-              >
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
-
-            <div className="h-6 w-px bg-gradient-to-b from-transparent via-goblin-border/50 to-transparent"></div>
+            {isAuthenticated ? (
+              <>
+                {/* Profile Button */}
+                <Link href="/profile">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 text-goblin-fg/70 hover:text-goblin-fg hover:bg-goblin-bg-card/70 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-goblin-green/20"
+                  >
+                    <User className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <div className="h-6 w-px bg-gradient-to-b from-transparent via-goblin-border/50 to-transparent"></div>
+              </>
+            ) : null}
 
             {isAuthenticated ? (
               <>
@@ -125,16 +128,27 @@ export function GoblinHeader() {
 
           {/* Mobile Menu - Enhanced */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Mobile Profile */}
-            <Link href="/profile">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 text-goblin-fg/70 hover:text-goblin-fg hover:bg-goblin-bg-card/70 rounded-xl transition-all"
-              >
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/profile">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 text-goblin-fg/70 hover:text-goblin-fg hover:bg-goblin-bg-card/70 rounded-xl transition-all"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/login">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 text-goblin-fg/70 hover:text-goblin-fg hover:bg-goblin-bg-card/70 rounded-xl transition-all"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
 
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>

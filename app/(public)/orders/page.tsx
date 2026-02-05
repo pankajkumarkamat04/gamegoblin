@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Download, Clock, CheckCircle, XCircle, RefreshCw, ChevronRight, Loader2, User } from "lucide-react";
+import { Search, Download, Clock, CheckCircle, XCircle, RefreshCw, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useUserAuth } from "@/contexts/UserAuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { buildAPIURL, getAPIHeaders } from "@/lib/utils";
 import { getActiveGames } from "@/lib/games-data";
 import Cookies from "js-cookie";
@@ -151,8 +152,8 @@ const mapZoroOrderToOrder = (raw: any): Order => {
   };
 };
 
-export default function OrdersPage() {
-  const { user, isAuthenticated, openAuthModal } = useUserAuth();
+function OrdersPageContent() {
+  const { isAuthenticated } = useUserAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -430,17 +431,15 @@ Generated: ${new Date().toLocaleString('en-IN')}
             <h1 className="text-4xl font-bold text-goblin-fg mb-2">Orders</h1>
             <p className="text-goblin-fg/60">Track and manage your purchases</p>
           </div>
-          {isAuthenticated && (
-            <Button
-              onClick={fetchUserOrders}
-              variant="outline"
-              className="border-[#4ecdc4] text-[#4ecdc4] hover:bg-[#4ecdc4]/10"
-              disabled={loading}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          )}
+          <Button
+            onClick={fetchUserOrders}
+            variant="outline"
+            className="border-[#4ecdc4] text-[#4ecdc4] hover:bg-[#4ecdc4]/10"
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Status Filter Tabs */}
@@ -480,18 +479,6 @@ Generated: ${new Date().toLocaleString('en-IN')}
             {[...Array(6)].map((_, i) => (
               <OrderCardSkeleton key={i} />
             ))}
-          </div>
-        ) : !isAuthenticated ? (
-          <div className="text-center py-20 border border-goblin-border/30 rounded-lg bg-goblin-bg-card">
-            <User className="w-16 h-16 text-goblin-fg/30 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-goblin-fg mb-2">Login Required</h3>
-            <p className="text-goblin-fg/60 mb-8">Please login to view your order history</p>
-            <Button 
-              onClick={openAuthModal}
-              className="bg-[#4ecdc4] hover:bg-[#4ecdc4]/90 text-white h-12 px-8"
-            >
-              Login with Phone
-            </Button>
           </div>
         ) : error ? (
           <div className="text-center py-20 border border-red-500/30 rounded-lg bg-red-500/5">
@@ -797,5 +784,13 @@ Generated: ${new Date().toLocaleString('en-IN')}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <ProtectedRoute>
+      <OrdersPageContent />
+    </ProtectedRoute>
   );
 }

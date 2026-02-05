@@ -280,22 +280,26 @@ export default function LoginPage() {
 
                     {step === 'otp' && (
                         <form onSubmit={handleVerifyOTP} className="space-y-6">
+                            {/* Phone Number Display */}
+                            <div className="flex items-center gap-2 px-4 py-3 bg-goblin-bg/30 border border-goblin-border/30 rounded-xl">
+                                <Smartphone className="w-4 h-4 text-goblin-fg/60" />
+                                <span className="text-goblin-fg font-medium flex-1">+91 {phone}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setStep('phone');
+                                        setOtp("");
+                                        setError("");
+                                    }}
+                                    className="text-xs text-goblin-green hover:underline"
+                                    disabled={loading}
+                                >
+                                    Change
+                                </button>
+                            </div>
+
                             <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <Label htmlFor="otp" className="text-goblin-fg">Enter OTP</Label>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setStep('phone');
-                                            setOtp("");
-                                            setError("");
-                                        }}
-                                        className="text-xs text-goblin-green hover:underline"
-                                        disabled={loading}
-                                    >
-                                        Change Number
-                                    </button>
-                                </div>
+                                <Label htmlFor="otp" className="text-goblin-fg">Enter OTP</Label>
                                 <div className="relative">
                                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-goblin-fg/40" />
                                     <Input
@@ -353,6 +357,15 @@ export default function LoginPage() {
 
                     {step === 'register' && (
                         <form onSubmit={handleCompleteRegistration} className="space-y-4">
+                            {/* Phone Number Display */}
+                            <div className="space-y-1">
+                                <Label className="text-goblin-fg">Mobile Number</Label>
+                                <div className="flex items-center gap-2 px-4 py-3 bg-goblin-bg/30 border border-goblin-border/30 rounded-xl">
+                                    <Smartphone className="w-4 h-4 text-goblin-fg/60" />
+                                    <span className="text-goblin-fg font-medium">+91 {phone}</span>
+                                </div>
+                            </div>
+
                             {/* Name Input */}
                             <div className="space-y-1">
                                 <Label htmlFor="name" className="text-goblin-fg">Full Name</Label>

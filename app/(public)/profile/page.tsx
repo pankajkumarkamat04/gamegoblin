@@ -12,6 +12,7 @@ import Image from "next/image";
 import Cookies from "js-cookie";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { type User as UserType } from "@/lib/store/authSlice";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +21,14 @@ import {
   Phone,
   Mail,
   Shield,
-  Wallet,
   ArrowRight,
   Camera,
+  LogOut,
 } from "lucide-react";
 import { buildAPIURL, getAPIHeaders } from "@/lib/utils";
 
-export default function ProfilePage() {
-  const { isAuthenticated, isAuthReady, openAuthModal, fetchProfile } =
+function ProfilePageContent() {
+  const { isAuthenticated, isAuthReady, fetchProfile, logout } =
     useUserAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -186,37 +187,11 @@ export default function ProfilePage() {
     }
   };
 
-  // Loading state
-  if (!isAuthReady || loading) {
+  // Loading state (auth is ready and user is authenticated by ProtectedRoute)
+  if (loading) {
     return (
       <div className="min-h-screen bg-goblin-bg flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-goblin-green animate-spin" />
-      </div>
-    );
-  }
-
-  // Not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-goblin-bg flex items-center justify-center px-4">
-        <Card className="max-w-md w-full p-6 bg-goblin-bg-card border-goblin-border text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-goblin-bg">
-            <User className="h-6 w-6 text-goblin-green" />
-          </div>
-          <h1 className="text-xl font-bold text-goblin-fg mb-2">
-            Login to manage your profile
-          </h1>
-          <p className="text-sm text-goblin-muted mb-4">
-            Update your name, email, and avatar, and view your wallet balance in
-            one place.
-          </p>
-          <Button
-            className="w-full bg-goblin-green hover:bg-goblin-green/90 text-black font-semibold"
-            onClick={openAuthModal}
-          >
-            Login / Sign Up
-          </Button>
-        </Card>
       </div>
     );
   }
@@ -244,7 +219,6 @@ export default function ProfilePage() {
 
   // Main profile view
   const displayName = profile.name || "Player";
-  const walletBalance = profile.walletBalance ?? 0;
   const avatarUrl = avatarPreview || profile.profilePicture || null;
 
   return (
@@ -260,9 +234,9 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
-          {/* Left: Avatar + editable info */}
-          <Card className="md:col-span-2 p-4 sm:p-6 bg-goblin-bg-card border-goblin-border space-y-4">
+        <div className="grid gap-4 sm:gap-6">
+          {/* Avatar + editable info */}
+          <Card className="p-4 sm:p-6 bg-goblin-bg-card border-goblin-border space-y-4">
             <div className="flex items-center gap-4 mb-2">
               <div className="relative h-16 w-16 rounded-full border border-goblin-green/50 bg-goblin-bg flex items-center justify-center overflow-hidden">
                 {avatarUrl ? (
@@ -389,45 +363,37 @@ export default function ProfilePage() {
                 </Button>
               </div>
             </form>
-          </Card>
 
-          {/* Right: Wallet + quick links */}
-          <Card className="p-4 sm:p-5 bg-goblin-bg-card border-goblin-border flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-goblin-green" />
-                  <span className="text-sm font-semibold text-goblin-fg">
-                    Wallet Balance
-                  </span>
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-goblin-green mb-1">
-                ₹{walletBalance.toLocaleString("en-IN")}
-              </p>
-              <p className="text-[11px] text-goblin-muted">
-                Use your wallet for instant orders. Top up from the wallet page
-                any time.
-              </p>
-            </div>
-
-            <div className="mt-4 space-y-2">
-              <Link href="/wallet">
-                <Button className="w-full bg-goblin-green/10 hover:bg-goblin-green/20 text-goblin-green font-semibold text-sm flex items-center justify-center gap-2 border border-goblin-green/40">
-                  Add Money
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
+            {/* Quick Links */}
+            <div className="pt-4 border-t border-goblin-border/60 mt-4 space-y-2">
               <Link href="/orders">
                 <Button className="w-full bg-goblin-green hover:bg-goblin-green/90 text-black font-semibold text-sm flex items-center justify-center gap-2">
                   View Orders
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
+              <Button
+                onClick={() => {
+                  logout();
+                  window.location.href = "/";
+                }}
+                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold text-sm flex items-center justify-center gap-2 border border-red-500/40"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
             </div>
           </Card>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <ProtectedRoute>
+      <ProfilePageContent />
+    </ProtectedRoute>
   );
 }

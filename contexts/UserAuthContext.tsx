@@ -36,48 +36,20 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
-    // Initialize Redux auth from Zoro-style storage
+    // Initialize Redux auth from token storage only
     dispatch(initializeAuth());
-
-    // Hydrate Redux from any existing GamesGoblin user cookie/localStorage
-    if (typeof window === "undefined") return;
-    let storedUser = Cookies.get("user_auth");
-    if (!storedUser) {
-      try {
-        storedUser = localStorage.getItem("user_auth") || undefined;
-      } catch (e) {
-        console.warn("localStorage access failed:", e);
-      }
-    }
-
-    if (storedUser) {
-      try {
-        const parsedUser: User = JSON.parse(storedUser);
-        dispatch(checkAuthSuccess(parsedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-      }
-    }
-
     setIsAuthReady(true);
   }, [dispatch]);
 
   const login = (userData: User, token?: string) => {
-    const userStr = JSON.stringify(userData);
-
-    // Save to Cookies (365 days) with mobile-friendly settings
-    Cookies.set("user_auth", userStr, { expires: 365, path: '/', sameSite: 'lax' });
-
-    // Save to localStorage (Backup)
-    try {
-      localStorage.setItem("user_auth", userStr);
-    } catch (e) { }
-
-    // Also save token if provided
+    // Only save token, user data goes to Redux only
     if (token) {
       persistToken(token);
-      // Sync Redux auth slice (Zoro-style)
+      // Sync Redux auth slice
       dispatch(loginSuccess({ user: userData, token }));
+    } else {
+      // If no token, still update Redux with user data
+      dispatch(checkAuthSuccess(userData));
     }
   };
 
@@ -126,11 +98,7 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
       const { token, user: userData } = data;
       if (token && userData) {
         persistToken(token);
-        const userStr = JSON.stringify(userData);
-        Cookies.set("user_auth", userStr, { expires: 365, path: '/', sameSite: 'lax' });
-        try { localStorage.setItem("user_auth", userStr); } catch (e) { }
-
-        // Sync Redux auth
+        // Sync Redux auth only
         dispatch(loginSuccess({ user: userData, token }));
 
         return { ok: true, user: userData };
@@ -173,9 +141,7 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
       const { token, user: userData } = data;
       if (token && userData) {
         persistToken(token);
-        Cookies.set("user_auth", JSON.stringify(userData));
-
-        // Sync Redux auth
+        // Sync Redux auth only
         dispatch(loginSuccess({ user: userData, token }));
 
         return { ok: true, user: userData };
@@ -234,17 +200,7 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
 
       if (normalizedUser) {
         const typedUser = normalizedUser as User;
-        const userStr = JSON.stringify(typedUser);
-        Cookies.set("user_auth", userStr, {
-          expires: 365,
-          path: "/",
-          sameSite: "lax",
-        });
-        try {
-          localStorage.setItem("user_auth", userStr);
-        } catch (e) {}
-
-        // Sync Redux with latest profile
+        // Sync Redux with latest profile only
         dispatch(checkAuthSuccess(typedUser));
 
         return { ok: true, user: typedUser };
@@ -281,11 +237,7 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
       const { token, user: userData } = data.data || data;
       if (token && userData) {
         persistToken(token);
-        const userStr = JSON.stringify(userData);
-        Cookies.set("user_auth", userStr, { expires: 365, path: '/', sameSite: 'lax' });
-        try { localStorage.setItem("user_auth", userStr); } catch (e) { }
-
-        // Sync Redux auth
+        // Sync Redux auth only
         dispatch(loginSuccess({ user: userData, token }));
 
         return { ok: true, user: userData };
@@ -300,11 +252,11 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     dispatch(reduxLogout());
-    Cookies.remove("user_auth", { path: '/' });
+    // Only remove token storage, user data is in Redux only
     Cookies.remove("user_token", { path: '/' });
     try {
-      localStorage.removeItem("user_auth");
       localStorage.removeItem("user_token");
+      localStorage.removeItem("authToken");
     } catch (e) { }
   };
 
