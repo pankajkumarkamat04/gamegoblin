@@ -3,6 +3,7 @@
 import React, {
   useEffect,
   useState,
+  useRef,
   ChangeEvent,
   FormEvent,
   useCallback,
@@ -39,6 +40,7 @@ function ProfilePageContent() {
   const [email, setEmail] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const initialLoadDone = useRef(false);
 
   const getToken = useCallback((): string | undefined => {
     if (typeof window === "undefined") return undefined;
@@ -79,8 +81,11 @@ function ProfilePageContent() {
     }
   }, [isAuthenticated, fetchProfile]);
 
+  // Only run initial load once when auth is ready so name/email aren't constantly reset (which blocks typing)
   useEffect(() => {
     if (!isAuthReady) return;
+    if (initialLoadDone.current) return;
+    initialLoadDone.current = true;
     loadProfileData();
   }, [isAuthReady, loadProfileData]);
 
