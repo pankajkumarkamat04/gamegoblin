@@ -17,13 +17,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Loader2,
-  User,
   Phone,
   Mail,
   Shield,
   ArrowRight,
   Camera,
   LogOut,
+  RefreshCw,
 } from "lucide-react";
 import { buildAPIURL, getAPIHeaders } from "@/lib/utils";
 
@@ -196,22 +196,42 @@ function ProfilePageContent() {
     );
   }
 
-  // Profile not loaded
+  // Profile not loaded or failed to load
   if (!profile) {
     return (
       <div className="min-h-screen bg-goblin-bg flex items-center justify-center px-4">
-        <Card className="max-w-md w-full p-6 bg-goblin-bg-card border-goblin-border text-center">
-          <h1 className="text-xl font-bold text-goblin-fg mb-2">
+        <Card className="max-w-md w-full p-6 bg-goblin-bg-card border-goblin-border text-center space-y-4">
+          <h1 className="text-xl font-bold text-goblin-fg">
             {error ? "Failed to load profile" : "Profile not available"}
           </h1>
           {error && (
-            <p className="text-sm text-goblin-muted mb-4">{error}</p>
+            <p className="text-sm text-goblin-muted">{error}</p>
           )}
           {!error && (
-            <p className="text-sm text-goblin-muted mb-4">
+            <p className="text-sm text-goblin-muted">
               Please try again in a moment.
             </p>
           )}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <Button
+              onClick={() => loadProfileData()}
+              className="bg-goblin-green hover:bg-goblin-green/90 text-black font-semibold"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                logout();
+                window.location.href = "/";
+              }}
+              className="border-goblin-border text-goblin-fg"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </Card>
       </div>
     );
@@ -220,6 +240,8 @@ function ProfilePageContent() {
   // Main profile view
   const displayName = profile.name || "Player";
   const avatarUrl = avatarPreview || profile.profilePicture || null;
+  const isDataUrl =
+    typeof avatarUrl === "string" && avatarUrl.startsWith("data:");
 
   return (
     <div className="min-h-screen bg-goblin-bg py-8">
@@ -240,12 +262,21 @@ function ProfilePageContent() {
             <div className="flex items-center gap-4 mb-2">
               <div className="relative h-16 w-16 rounded-full border border-goblin-green/50 bg-goblin-bg flex items-center justify-center overflow-hidden">
                 {avatarUrl ? (
-                  <Image
-                    src={avatarUrl}
-                    alt="Avatar"
-                    fill
-                    className="object-cover"
-                  />
+                  isDataUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={avatarUrl}
+                      alt="Avatar"
+                      fill
+                      className="object-cover"
+                      unoptimized={!avatarUrl.startsWith("http")}
+                    />
+                  )
                 ) : (
                   <span className="text-xl font-bold text-goblin-green">
                     {displayName.charAt(0).toUpperCase()}
@@ -338,7 +369,9 @@ function ProfilePageContent() {
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2 text-goblin-fg">
                   <Phone className="h-4 w-4 text-goblin-green" />
-                  <span>+91 {profile.phone}</span>
+                  <span>
+                    {profile.phone ? `+91 ${profile.phone}` : "Phone not set"}
+                  </span>
                 </div>
                 {profile.email && (
                   <div className="flex items-center gap-2 text-goblin-fg">
