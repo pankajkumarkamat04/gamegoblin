@@ -430,13 +430,6 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
       if (foundPackage) {
         console.log("Found package:", foundPackage);
         setSelectedPackage(foundPackage);
-        // Scroll to packages section
-        setTimeout(() => {
-          const packagesSection = document.getElementById('packages-section');
-          if (packagesSection) {
-            packagesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 500);
         toast.success(`Selected: ${foundPackage.name}`);
       } else {
         console.log("Package not found!");
@@ -720,9 +713,6 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
 
     if (!isAuthenticated) {
       toast.error("Please login to continue");
-      // Scroll to login section
-      const orderSection = document.getElementById('order-section');
-      orderSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -758,25 +748,18 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
       // MLBB requires verification first
       if (!regionVerification?.verified) {
         toast.error("Please verify your game account first");
-        // Scroll to order section
-        const orderSection = document.getElementById('order-section');
-        orderSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
     } else if (requiresServer) {
       // Games requiring server region (Genshin, Wuthering Waves, Zenless, Honkai Star Rail)
       if (!userId || !serverRegion) {
         toast.error("Please enter your User ID and select Server Region");
-        const orderSection = document.getElementById('order-section');
-        orderSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
     } else {
       // All other games (including HOK) require at least User ID
       if (!userId) {
         toast.error("Please enter your User ID");
-        const orderSection = document.getElementById('order-section');
-        orderSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
     }
@@ -1200,7 +1183,7 @@ export default function GameDetailsPage({ params }: { params: Promise<{ slug: st
 
           {/* Order Form */}
           <div className="lg:col-span-1">
-            <div id="order-section" className="bg-goblin-bg-card border border-goblin-border rounded-xl shadow-lg sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide">
+            <div id="order-section" className="bg-goblin-bg-card border border-goblin-border rounded-xl shadow-lg sticky top-24">
               <div className="p-4">
                 <h2 className="text-base font-bold text-goblin-fg mb-3 flex items-center gap-2 pb-2 border-b border-goblin-border">
                   <ShoppingCart className="w-5 h-5 text-goblin-green" />
