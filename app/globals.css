@@ -1,0 +1,440 @@
+@import "tailwindcss";
+
+/* Tailwind v4 Custom Colors - Define as utilities */
+@theme {
+  --color-goblin-bg: #0f1419;
+  --color-goblin-bg-alt: #1a1f2e;
+  --color-goblin-bg-card: #252d3d;
+  --color-goblin-fg: #ffffff;
+  --color-goblin-muted: #8a94a6;
+  --color-goblin-primary: #ff6b35;
+  --color-goblin-secondary: #4ecdc4;
+  --color-goblin-accent: #ffe66d;
+  --color-goblin-orange: #ff6b35;
+  --color-goblin-green: #4ecdc4;
+  --color-goblin-blue: #4d94ff;
+  --color-goblin-purple: #9b59b6;
+  --color-goblin-border: #3a4553;
+  --color-goblin-hover: #ff8a65;
+}
+
+/* CSS Variables for compatibility */
+:root {
+  /* ShadCN Variables for Dark Theme */
+  --background: 15 20 25; /* #0f1419 */
+  --foreground: 255 255 255; /* #ffffff */
+  --card: 37 45 61; /* #252d3d */
+  --card-foreground: 255 255 255;
+  --popover: 37 45 61;
+  --popover-foreground: 255 255 255;
+  --primary: 255 107 53; /* #ff6b35 */
+  --primary-foreground: 255 255 255;
+  --secondary: 58 69 83;
+  --secondary-foreground: 255 255 255;
+  --muted: 58 69 83;
+  --muted-foreground: 138 148 166;
+  --accent: 78 205 196; /* #4ecdc4 */
+  --accent-foreground: 15 20 25;
+  --destructive: 231 76 60;
+  --destructive-foreground: 255 255 255;
+  --border: 58 69 83;
+  --input: 58 69 83;
+  --ring: 255 107 53;
+
+  /* Border radius */
+  --radius: 0.625rem;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  
+  body {
+    background-color: var(--color-goblin-bg);
+    color: var(--color-goblin-fg);
+    font-family: var(--font-poppins), system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Font utilities */
+  .font-display {
+    font-family: var(--font-quicksand), system-ui, sans-serif;
+  }
+  
+  /* Goblin theme custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: var(--color-goblin-bg-alt);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-goblin-green);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-goblin-purple);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}
+
+/* Goblin Theme Custom Classes */
+.goblin-glow {
+  box-shadow: 0 0 20px rgba(80, 250, 123, 0.3);
+}
+
+.goblin-glow-purple {
+  box-shadow: 0 0 20px rgba(189, 147, 249, 0.3);
+}
+
+.goblin-gradient {
+  background: linear-gradient(135deg, var(--color-goblin-green) 0%, var(--color-goblin-purple) 100%);
+}
+
+/* Animated gradient background */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  animation: gradient 8s ease infinite;
+}
+
+.goblin-text-gradient {
+  background: linear-gradient(135deg, var(--color-goblin-green) 0%, var(--color-goblin-purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Goblin footprint animations */
+@keyframes goblin-peek {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(5deg); }
+}
+
+@keyframes coin-drop {
+  0% { transform: translateY(-100px) rotate(0deg); opacity: 0; }
+  100% { transform: translateY(0) rotate(360deg); opacity: 1; }
+}
+
+@keyframes chest-fill {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.goblin-peek {
+  animation: goblin-peek 2s ease-in-out infinite;
+}
+
+.coin-drop {
+  animation: coin-drop 0.8s ease-out;
+}
+
+.chest-fill {
+  animation: chest-fill 0.6s ease-in-out;
+}
+
+/* Animation delays */
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
+
+.animation-delay-600 {
+  animation-delay: 600ms;
+}
+
+/* Enhanced Professional Styling */
+
+/* Advanced Gradient Backgrounds */
+.goblin-gradient-radial {
+  background: radial-gradient(circle at center, var(--color-goblin-green) 0%, var(--color-goblin-purple) 70%, var(--color-goblin-bg) 100%);
+}
+
+.goblin-gradient-conic {
+  background: conic-gradient(from 0deg, var(--color-goblin-green), var(--color-goblin-cyan), var(--color-goblin-purple), var(--color-goblin-pink), var(--color-goblin-green));
+}
+
+/* Glass Morphism Effects */
+.glass-card {
+  background: rgba(26, 26, 26, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(80, 250, 123, 0.1);
+}
+
+.glass-button {
+  background: rgba(80, 250, 123, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(80, 250, 123, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-button:hover {
+  background: rgba(80, 250, 123, 0.2);
+  border-color: rgba(80, 250, 123, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Professional Button Styles */
+.btn-primary-gaming {
+  background: linear-gradient(135deg, var(--color-goblin-green) 0%, var(--color-goblin-cyan) 100%);
+  color: var(--color-goblin-bg);
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary-gaming::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s;
+}
+
+.btn-primary-gaming:hover::before {
+  left: 100%;
+}
+
+.btn-primary-gaming:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(80, 250, 123, 0.4);
+}
+
+.btn-secondary-gaming {
+  background: rgba(189, 147, 249, 0.1);
+  color: var(--color-goblin-purple);
+  border: 2px solid var(--color-goblin-purple);
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-secondary-gaming:hover {
+  background: var(--color-goblin-purple);
+  color: var(--color-goblin-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(189, 147, 249, 0.3);
+}
+
+/* Enhanced Card Styles */
+.game-card {
+  background: linear-gradient(145deg, var(--color-goblin-bg-card) 0%, var(--color-goblin-bg-alt) 100%);
+  border: 1px solid var(--color-goblin-border);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-goblin-green), var(--color-goblin-cyan), var(--color-goblin-purple));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.game-card:hover::before {
+  opacity: 1;
+}
+
+.game-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--color-goblin-green);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(80, 250, 123, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Typography Enhancements */
+.text-gradient-gaming {
+  background: linear-gradient(135deg, var(--color-goblin-green), var(--color-goblin-cyan), var(--color-goblin-purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+
+.text-shadow-gaming {
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 0 10px rgba(80, 250, 123, 0.3);
+}
+
+/* Loading and Skeleton States */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-goblin-bg-card) 25%, var(--color-goblin-border) 50%, var(--color-goblin-bg-card) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Particle Effects */
+.particle-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.particle-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20% 30%, var(--color-goblin-green), transparent),
+    radial-gradient(2px 2px at 40% 70%, var(--color-goblin-purple), transparent),
+    radial-gradient(1px 1px at 90% 40%, var(--color-goblin-cyan), transparent),
+    radial-gradient(1px 1px at 60% 10%, var(--color-goblin-yellow), transparent);
+  background-repeat: repeat;
+  background-size: 550px 550px, 350px 350px, 250px 250px, 150px 150px;
+  animation: float-particles 20s linear infinite;
+  opacity: 0.3;
+}
+
+@keyframes float-particles {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-300px, -300px, 0);
+  }
+}
+
+/* Responsive Design Utilities */
+@media (max-width: 768px) {
+  .game-card:hover {
+    transform: none;
+  }
+  
+  .btn-primary-gaming:hover,
+  .btn-secondary-gaming:hover {
+    transform: none;
+  }
+  
+  .particle-bg::before {
+    display: none;
+  }
+}
+
+/* Focus States for Accessibility */
+.focus-gaming:focus {
+  outline: 2px solid var(--color-goblin-green);
+  outline-offset: 2px;
+}
+
+/* Custom Checkbox and Radio Styles */
+.checkbox-gaming {
+  accent-color: var(--color-goblin-green);
+}
+
+/* Enhanced Scrollbar for Better UX */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-goblin-green) var(--color-goblin-bg-alt);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-goblin-bg-alt);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-goblin-green), var(--color-goblin-cyan));
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--color-goblin-cyan), var(--color-goblin-purple));
+}
+
+/* 3D Carousel Perspective */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Fade In Up Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Background Position Utilities for Animated Buttons */
+.bg-size-200 {
+  background-size: 200% auto;
+}
+
+.bg-pos-0 {
+  background-position: 0% center;
+}
+
+.bg-pos-100 {
+  background-position: 100% center;
+}

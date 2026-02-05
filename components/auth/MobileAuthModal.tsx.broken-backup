@@ -1,0 +1,518 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useUserAuth } from "@/contexts/UserAuthContext";
+import { isTestUser, getTestUserData, TEST_MODE } from "@/lib/test-mode";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Smartphone, KeyRound, Loader2, CheckCircle2 } from "lucide-react";
+
+interface MobileAuthModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: (user: any) => void;
+}
+
+type AuthStep = 'phone' | 'otp' | 'success';
+
+// Extend Window interface for MSG91 Widget
+declare global {
+  interface Window {
+    initSendOTP?: (config: any) => void;
+    sendOtp?: (phone: string, successCb?: (data: any) => void, errorCb?: (error: any) => void) => void;
+    verifyOtp?: (otp: string, successCb?: (data: any) => void, errorCb?: (error: any) => void, reqId?: string) => void;
+    retryOtp?: (channel: string | null, successCb?: (data: any) => void, errorCb?: (error: any) => void) => void;
+  }
+}
+
+export function MobileAuthModal({ open, onOpenChange, onSuccess }: MobileAuthModalProps) {
+  const [step, setStep] = useState<AuthStep>('phone');
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [requestId, setRequestId] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const auth = useUserAuth();
+
+  // Initialize MSG91 Widget configuration (called when phone is entered)
+  const initializeMSG91WithPhone = (phoneNumber: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const widgetId = process.env.NEXT_PUBLIC_MSG91_WIDGET_ID;
+      const tokenAuth = process.env.NEXT_PUBLIC_MSG91_WIDGET_TOKEN;
+
+      if (!widgetId || !tokenAuth) {
+        console.error('❌ MSG91 credentials missing!', { widgetId: !!widgetId, tokenAuth: !!tokenAuth });
+        const errorMsg = 'OTP service not configured. Please contact support.';
+        setError(errorMsg);
+        reject(new Error(errorMsg));
+        return;
+      }
+
+      // Debug: Log the configuration (without exposing full token)
+      console.log('🔧 Initializing MSG91 Widget with:', {
+        widgetId,
+        tokenAuth: tokenAuth.substring(0, 10) + '...',
+        identifier: phoneNumber,
+        phoneLength: phoneNumber.length,
+        startsWithCountryCode: phoneNumber.startsWith('91')
+      });
+
+      try {
+        const config = {
+          widgetId: widgetId,
+          tokenAuth: tokenAuth,
+          identifier: phoneNumber,
+          exposeMethods: true,
+          success: async (data: any) => {
+            console.log('✅ MSG91 Widget Success (OTP Verified):', data);
+            
+            const accessToken = data.token || data.authToken;
+            
+            if (!accessToken) {
+              console.error('❌ No access token in MSG91 response:', data);
+              setError('Verification failed - no access token received');
+              setLoading(false);
+              return;
+            }
+
+            console.log('🔑 Verifying access token with backend...');
+            
+            try {
+              const resp = await auth.verifyWidget(accessToken);
+              if (resp.ok && resp.user) {
+                console.log('✅ Backend verification successful!');
+                setStep('success');
+                setTimeout(() => {
+                  onSuccess?.(resp.user);
+                  onOpenChange(false);
+                  resetForm();
+                }, 1200);
+              } else {
+                console.error('❌ Backend verification failed:', resp.error);
+                setError(resp.error || 'Backend verification failed');
+              }
+            } catch (err: any) {
+              console.error('❌ Backend verification error:', err);
+              setError(err?.message || 'Backend verification failed');
+            } finally {
+              setLoading(false);
+            }
+          },
+          failure: (error: any) => {
+            console.error('❌ MSG91 Widget Error (full):', {
+              error,
+              type: typeof error,
+              keys: Object.keys(error || {}),
+              stringified: JSON.stringify(error)
+            });
+            
+            // Handle different error formats
+            let errorMsg = 'Failed to send OTP. Please try again or contact support.';
+            
+            if (error) {
+              if (typeof error === 'string') {
+                // Direct string error
+                if (error === 'AuthenticationFailure') {
+                  errorMsg = 'OTP service temporarily unavailable. Please use test login (9137588392 / 000000) or try again later.';
+                } else {
+                  errorMsg = error;
+                }
+              } else if (error.message) {
+                errorMsg = error.message;
+              } else if (error.msg) {
+                errorMsg = error.msg;
+              } else if (error.error) {
+                errorMsg = error.error;
+              } else if (error.type === 'AuthenticationFailure') {
+                errorMsg = 'OTP service temporarily unavailable. Please use test login (9137588392 / 000000) or try again later.';
+              }
+            }
+            
+            console.error('📢 User-facing error:', errorMsg);
+            setError(errorMsg);
+            setLoading(false);
+            reject(new Error(errorMsg));
+          },
+        };
+        
+        console.log('📤 Calling initSendOTP with config...');
+        window.initSendOTP!(config);
+        
+        console.log('✅ MSG91 Widget configuration set, waiting for initialization...');
+        
+        // Wait a bit for initialization to complete
+        setTimeout(() => {
+          if (window.sendOtp) {
+            console.log('✅ window.sendOtp is available');
+            resolve();
+          } else {
+            console.error('❌ window.sendOtp not available after init');
+            const errorMsg = 'MSG91 initialization failed. Please refresh the page and try again.';
+            setError(errorMsg);
+            reject(new Error(errorMsg));
+          }
+        }, 500);
+      } catch (err: any) {
+        console.error('❌ Error initializing MSG91:', err);
+        const errorMsg = err?.message || 'Failed to initialize OTP service. Please refresh the page.';
+        setError(errorMsg);
+        reject(new Error(errorMsg));
+      }
+    });
+  };
+
+  const handleSendOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    // Validate phone number
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+
+    // 🧪 TEST MODE: Auto-send OTP for test user
+    if (TEST_MODE.enabled && isTestUser(phone)) {
+      console.log('🧪 TEST MODE: Auto-sending OTP for test user', phone);
+      setStep('otp');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Add country code (91 for India)
+      const phoneWithCountryCode = '91' + phone;
+      
+      console.log('📤 Sending OTP via MSG91 Widget to:', phoneWithCountryCode);
+      
+      // Check if widget is available
+      if (!window.sendOtp) {
+        console.error('❌ MSG91 Widget not initialized');
+        setError('OTP service not ready. Please refresh the page.');
+        setLoading(false);
+        return;
+      }
+
+      // Use MSG91 Widget's sendOtp method
+      window.sendOtp(
+        phoneWithCountryCode,
+        (data: any) => {
+          console.log('✅ OTP sent successfully!', data);
+          console.log('📊 Send OTP response:', JSON.stringify(data));
+          console.log('📊 All response keys:', Object.keys(data || {}));
+          
+          // Store request ID - try multiple possible property names
+          const reqId = data?.requestId || data?.request_id || data?.reqId || data?.id || data?.type;
+          if (reqId) {
+            setRequestId(reqId);
+            console.log('💾 Stored request ID:', reqId);
+          } else {
+            console.warn('⚠️ No request ID found in response!');
+          }
+          
+          setStep('otp');
+          setError("");
+          setLoading(false);
+        },
+        (error: any) => {
+          console.error('❌ Failed to send OTP:', error);
+          console.error('📊 Send Error:', JSON.stringify(error));
+          setError(error.message || 'Failed to send OTP. Please try again.');
+          setLoading(false);
+        }
+      );
+    } catch (err: any) {
+      console.error('❌ Send OTP error:', err);
+      setError(err?.message || 'Failed to send OTP. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (otp.length !== 4) {
+      setError("Please enter a valid 4-digit OTP");
+      return;
+    }
+
+    // 🧪 TEST MODE: Auto-verify test user
+    if (TEST_MODE.enabled && isTestUser(phone, otp)) {
+      console.log('🧪 TEST MODE: Auto-verifying test user', phone);
+      setLoading(true);
+      
+      try {
+        const resp = await auth.loginUser(phone, otp);
+        if (resp.ok && resp.user) {
+          console.log('✅ Test user login successful!');
+          setStep('success');
+          setTimeout(() => {
+            onSuccess?.(resp.user);
+            onOpenChange(false);
+            resetForm();
+          }, 1200);
+        } else {
+          console.error('❌ Test user login failed:', resp.error);
+          setError(resp.error || 'Login failed');
+        }
+      } catch (err: any) {
+        console.error('❌ Test user login error:', err);
+        setError(err?.message || 'Login failed');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      console.log('🔐 Verifying OTP via MSG91 Widget...', otp);
+      
+      // Check if widget is available
+      if (!window.verifyOtp) {
+        console.error('❌ MSG91 Widget not initialized');
+        setError('OTP service not ready. Please refresh the page.');
+        setLoading(false);
+        return;
+      }
+
+      // Use MSG91 Widget's verifyOtp method with request ID
+      // The widget's success callback (configured in useEffect) will handle the rest
+      console.log('🔑 Using request ID for verification:', requestId);
+      
+      window.verifyOtp(
+        otp,
+        (data: any) => {
+          console.log('✅ OTP verified by MSG91!', data);
+          console.log('📊 Verification data:', JSON.stringify(data));
+          // The success callback in widget config will handle backend verification
+        },
+        (error: any) => {
+          console.error('❌ OTP verification failed');
+          console.error('📊 Error object:', JSON.stringify(error));
+          console.error('📊 Error type:', typeof error);
+          console.error('📊 Error keys:', Object.keys(error || {}));
+          
+          // Better error message
+          let errorMsg = 'Invalid OTP. Please try again.';
+          if (error && error.message) {
+            errorMsg = error.message;
+          } else if (typeof error === 'string') {
+            errorMsg = error;
+          }
+          
+          setError(errorMsg);
+          setLoading(false);
+        },
+        requestId // Pass request ID as 4th parameter
+      );
+    } catch (err: any) {
+      console.error('❌ Verify OTP error:', err);
+      setError(err?.message || 'Failed to verify OTP. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!window.retryOtp) {
+      setError("Resend service not available. Please refresh the page.");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      window.retryOtp(
+        null, // Use default channel
+        (data: any) => {
+          console.log('✅ OTP resent successfully:', data);
+          setError(""); // Clear any previous errors
+          setLoading(false);
+        },
+        (error: any) => {
+          console.error('❌ Resend OTP error:', error);
+          const errorMsg = error?.message || error?.msg || String(error) || "Failed to resend OTP";
+          setError(errorMsg);
+          setLoading(false);
+        }
+      );
+    } catch (err: any) {
+      console.error('Resend OTP exception:', err);
+      const errorMsg = err?.message || err?.msg || (typeof err === 'string' ? err : "Failed to resend OTP");
+      setError(errorMsg);
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setStep('phone');
+    setPhone("");
+    setOtp("");
+    setError("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md bg-goblin-bg-card border-goblin-border/30">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-goblin-fg">
+            {step === 'phone' && "Login / Sign Up"}
+            {step === 'otp' && "Verify OTP"}
+            {step === 'success' && "Welcome!"}
+          </DialogTitle>
+          <DialogDescription className="text-goblin-fg/60">
+            {step === 'phone' && "Enter your mobile number to continue"}
+            {step === 'otp' && `We've sent a 4-digit code to +91 ${phone}`}
+            {step === 'success' && "You're all set!"}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Phone Number Step */}
+        {step === 'phone' && (
+          <form onSubmit={handleSendOTP} className="space-y-6 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-goblin-fg flex items-center gap-2">
+                <Smartphone className="w-4 h-4" />
+                Mobile Number
+              </Label>
+              <div className="flex gap-2">
+                <div className="flex items-center justify-center px-3 bg-goblin-bg-alt border border-goblin-border/30 rounded-lg text-goblin-fg font-medium">
+                  +91
+                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="XXXXX XXXXX"
+                  value={phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setPhone(value);
+                  }}
+                  className="flex-1 bg-goblin-bg-alt border-goblin-border/30 text-goblin-fg text-lg"
+                  maxLength={10}
+                  required
+                />
+              </div>
+              {error && (
+                <p className="text-sm text-red-400">{error}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading || phone.length !== 10}
+              className="w-full h-12 bg-gradient-to-r from-[#4ecdc4] to-[#50fa7b] hover:shadow-lg hover:shadow-[#4ecdc4]/30 text-white font-semibold text-lg"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Sending OTP...
+                </>
+              ) : (
+                "Send OTP"
+              )}
+            </Button>
+
+            <p className="text-xs text-center text-goblin-fg/50">
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </p>
+          </form>
+        )}
+
+        {/* OTP Verification Step */}
+        {step === 'otp' && (
+          <form onSubmit={handleVerifyOTP} className="space-y-6 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="otp" className="text-goblin-fg flex items-center gap-2">
+                <KeyRound className="w-4 h-4" />
+                Enter OTP
+              </Label>
+              <Input
+                id="otp"
+                type="text"
+                placeholder="0000"
+                value={otp}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setOtp(value);
+                }}
+                className="bg-goblin-bg-alt border-goblin-border/30 text-goblin-fg text-2xl text-center tracking-widest font-bold"
+                maxLength={4}
+                required
+              />
+              {error && (
+                <p className="text-sm text-red-400">{error}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading || otp.length !== 4}
+              className="w-full h-12 bg-gradient-to-r from-[#4ecdc4] to-[#50fa7b] hover:shadow-lg hover:shadow-[#4ecdc4]/30 text-white font-semibold text-lg"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                "Verify OTP"
+              )}
+            </Button>
+
+            <div className="text-center space-y-2">
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={loading}
+                className="text-sm text-[#4ecdc4] hover:text-[#50fa7b] transition-colors disabled:opacity-50"
+              >
+                Didn't receive code? Resend
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep('phone');
+                  setOtp("");
+                  setError("");
+                }}
+                className="block w-full text-sm text-goblin-fg/60 hover:text-goblin-fg transition-colors"
+              >
+                Change phone number
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Success Step */}
+        {step === 'success' && (
+          <div className="py-8 text-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-[#4ecdc4] to-[#50fa7b] flex items-center justify-center">
+              <CheckCircle2 className="w-10 h-10 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-goblin-fg mb-2">
+              Authentication Successful!
+            </h3>
+            <p className="text-goblin-fg/60">
+              Redirecting you now...
+            </p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
